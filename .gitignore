@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+*.log
+# Mitschnitte / Aufzeichnungen nicht einchecken (können private Daten enthalten):
+cap*.txt
+bms*.txt
+steuer*.txt
+*logcat*.txt
+captures*.json

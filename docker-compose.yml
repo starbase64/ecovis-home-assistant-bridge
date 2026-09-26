@@ -1,0 +1,8 @@
+services:
+  ecovis-ha-bridge:
+    build: .
+    container_name: ecovis-ha-bridge
+    restart: unless-stopped
+    env_file: .env
+    # Nur nötig, wenn dein MQTT-Broker ausschließlich auf 127.0.0.1 lauscht:
+    # network_mode: host

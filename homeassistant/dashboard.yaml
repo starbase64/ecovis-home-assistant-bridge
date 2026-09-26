@@ -1,0 +1,146 @@
+# ECOVIS 2400 – Home Assistant Dashboard (Lovelace)
+#
+# Einbinden: Dashboard -> Bearbeiten (Stift) -> 3-Punkte -> Rohkonfigurations-Editor
+#            -> diesen Inhalt einfügen. Oder nur den cards:-Block in eine Ansicht kopieren.
+#
+# Die sensor.ecovis_* / switch.ecovis_* Entitäten legt die Bridge per MQTT-Discovery
+# automatisch an (object_id gesetzt -> Namen sind fix).
+# NUR die Eco-Tracker-Zeilen sind Platzhalter: unter Entwicklerwerkzeuge -> Zustände
+# (Filter "eco") die echten IDs eintragen.
+
+title: ECOVIS 2400
+views:
+  - title: ECOVIS 2400
+    path: ecovis
+    icon: mdi:solar-power
+    cards:
+
+      - type: conditional
+        conditions:
+          - entity: sensor.ecovis_connection
+            state: degraded
+        card:
+          type: markdown
+          content: >
+            ⚠️ **Verbindung zur ECO-WORTHY-Cloud gestört** (oder App verbunden –
+            es ist nur eine Sitzung pro Gerät möglich). Werte evtl. veraltet.
+
+      # --- Eco Tracker (Platzhalter – echte IDs eintragen) ---
+      - type: entities
+        title: Eco Tracker (Netz)
+        entities:
+          - entity: sensor.eco_tracker_power        # <-- Gesamt, ersetzen
+            name: Gesamt
+            icon: mdi:transmission-tower
+          - type: divider
+          - entity: sensor.eco_tracker_power_l1     # <-- Phase 1, ersetzen
+            name: Phase 1 (L1)
+          - entity: sensor.eco_tracker_power_l2     # <-- Phase 2, ersetzen
+            name: Phase 2 (L2)
+          - entity: sensor.eco_tracker_power_l3     # <-- Phase 3, ersetzen
+            name: Phase 3 (L3)
+
+      # --- Überblick ---
+      - type: glance
+        title: ECOVIS – Überblick
+        columns: 4
+        state_color: true
+        entities:
+          - entity: sensor.ecovis_pv_power
+            name: PV
+          - entity: sensor.ecovis_ac_power
+            name: AC
+          - entity: sensor.ecovis_battery_power
+            name: Batterie
+          - entity: sensor.ecovis_soc
+            name: SOC
+
+      # --- PV ---
+      - type: entities
+        title: PV
+        entities:
+          - entity: sensor.ecovis_pv_power
+            name: PV gesamt
+          - type: divider
+          - entity: sensor.ecovis_pv1_2_voltage
+            name: PV1+2 Spannung
+          - entity: sensor.ecovis_pv1_2_current
+            name: PV1+2 Strom
+          - entity: sensor.ecovis_pv1_2_power
+            name: PV1+2 Leistung
+          - type: divider
+          - entity: sensor.ecovis_pv3_4_voltage
+            name: PV3+4 Spannung
+          - entity: sensor.ecovis_pv3_4_current
+            name: PV3+4 Strom
+          - entity: sensor.ecovis_pv3_4_power
+            name: PV3+4 Leistung
+
+      # --- Batterie ---
+      - type: entities
+        title: Batterie
+        entities:
+          - entity: sensor.ecovis_soc
+            name: SOC
+          - entity: sensor.ecovis_soh
+            name: SOH
+          - entity: sensor.ecovis_battery_power
+            name: Leistung (− = Entladen)
+          - entity: sensor.ecovis_battery_voltage
+            name: Spannung
+          - entity: sensor.ecovis_battery_current
+            name: Strom (− = Entladen)
+          - entity: sensor.ecovis_battery_temp
+            name: Temperatur
+          - entity: sensor.ecovis_battery_remaining
+            name: Restkapazität
+          - entity: sensor.ecovis_battery_capacity
+            name: Kapazität
+
+      # --- Wechselrichter ---
+      - type: entities
+        title: Wechselrichter
+        entities:
+          - entity: sensor.ecovis_ac_power
+            name: AC-Leistung
+          - entity: sensor.ecovis_grid_voltage
+            name: Netzspannung
+          - entity: sensor.ecovis_grid_frequency
+            name: Netzfrequenz
+          - entity: sensor.ecovis_power_factor
+            name: Leistungsfaktor
+          - entity: sensor.ecovis_inverter_temp
+            name: Innentemperatur
+
+      # --- Energie & Erlös ---
+      - type: entities
+        title: Energie & Erlös
+        entities:
+          - entity: sensor.ecovis_energy_today
+            name: Erzeugung heute
+          - entity: sensor.ecovis_energy_total
+            name: Gesamtertrag
+          - entity: sensor.ecovis_consumption_total
+            name: Gesamtverbrauch
+          - type: divider
+          - entity: sensor.ecovis_revenue_today
+            name: Erlös heute
+          - entity: sensor.ecovis_revenue_total
+            name: Gesamterlös
+
+      # --- Steuerung ---
+      - type: entities
+        title: Steuerung
+        entities:
+          - entity: select.ecovis_betriebsmodus
+            name: Betriebsmodus
+          - entity: number.ecovis_einspeiseleistung
+            name: Einspeiseleistung (Sollwert)
+          - entity: number.ecovis_ladeleistung
+            name: Ladeleistung (0 = aus)
+          - entity: switch.ecovis_reverse_feed
+            name: Rückstromeinspeisung
+          - entity: button.ecovis_telemetry_refresh
+            name: Telemetrie aktualisieren
+          - entity: sensor.ecovis_connection
+            name: Verbindung
