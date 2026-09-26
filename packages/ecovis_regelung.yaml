@@ -1,0 +1,83 @@
+# packages/ecovis_regelung.yaml
+# ECOVIS 2400 – Einspeise-Regelung nach Eco Tracker
+# --------------------------------------------------------------------------
+# Ablage: als Paket unter  <config>/packages/ecovis_regelung.yaml
+# (deine configuration.yaml hat bereits:  packages: !include_dir_named packages).
+# Danach: Entwicklerwerkzeuge -> YAML -> Konfiguration prüfen -> neu laden.
+# Deine configuration.yaml / automations.yaml müssen NICHT geändert werden.
+#
+# Signal: sensor.netzfehler_geglaettet  (positiv = Netzbezug, negativ = Einspeisung)
+# Regler (integrierend, sanft wegen Cloud-Rate-Limit):
+#   Fehler       = Netzfehler + Ziel-Einspeisung
+#   neuer Sollw. = alter Sollwert + gain * Fehler   (begrenzt 0..800, Totband)
+#   -> Netz wird Richtung  -Ziel  geregelt (Ziel 0 = Nulleinspeisung).
+#
+# WICHTIG – Koordination: Deine 4020X regelt bereits auf denselben Netzwert.
+# Zwei unabhängige Regler auf ein Signal schaukeln. Daher:
+#   - standardmäßig AUS (input_boolean.ecovis_regelung),
+#   - gain klein (0.5) für ruhiges Verhalten,
+#   - zum Testen am besten die 4020X-Regelung kurz pausieren ODER dem ECOVIS
+#     eine eigene Rolle geben (z. B. feste Ziel-Einspeisung statt Nulleinspeisung).
+
+input_boolean:
+  ecovis_regelung:
+    name: ECOVIS Regelung nach Eco Tracker
+    icon: mdi:sine-wave
+
+input_number:
+  ecovis_ziel_einspeisung:
+    name: ECOVIS Ziel-Einspeisung
+    min: 0
+    max: 800
+    step: 10
+    unit_of_measurement: W
+    mode: box
+    icon: mdi:transmission-tower-export
+    # 0 = Nulleinspeisung; >0 = gezielt so viele Watt einspeisen
+
+automation:
+  - id: ecovis_regelung_nachfuehren
+    alias: ECOVIS Regelung – Sollwert nachführen
+    mode: single
+    triggers:
+      - trigger: time_pattern
+        seconds: "/60"          # alle 60 s (nicht kürzer wegen Rate-Limit)
+    conditions:
+      - condition: state
+        entity_id: input_boolean.ecovis_regelung
+        state: "on"
+      # nur regeln, wenn die ECOVIS-Cloud-Verbindung frisch ist (App nicht verbunden)
+      - condition: state
+        entity_id: sensor.ecovis_2400_ecovis_verbindung
+        state: "online"
+    actions:
+      - variables:
+          gain: 0.5
+          grid: "{{ states('sensor.netzfehler_geglaettet') | float(0) }}"
+          ziel: "{{ states('input_number.ecovis_ziel_einspeisung') | float(0) }}"
+          cur: "{{ states('number.ecovis_2400_einspeiseleistung') | float(0) }}"
+          fehler: "{{ grid + ziel }}"
+          neu: "{{ [800, [0, (cur + gain * fehler) | round(0)] | max] | min }}"
+      # Totband: nur schreiben, wenn Abweichung und Änderung relevant sind
+      - condition: template
+        value_template: "{{ (fehler | abs) >= 25 and (neu - cur) | abs >= 10 }}"
+      - action: number.set_value
+        target:
+          entity_id: number.ecovis_2400_einspeiseleistung
+        data:
+          value: "{{ neu }}"
+
+  # Beim Ausschalten der Regelung zurück auf Automatik (CT/Shelly übernimmt)
+  - id: ecovis_regelung_aus_automatik
+    alias: ECOVIS Regelung aus – zurück auf Automatik
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: input_boolean.ecovis_regelung
+        to: "off"
+    actions:
+      - action: select.select_option
+        target:
+          entity_id: select.ecovis_2400_betriebsmodus
+        data:
+          option: Automatik
