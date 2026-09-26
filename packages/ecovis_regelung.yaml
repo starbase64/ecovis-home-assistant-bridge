@@ -12,12 +12,6 @@
 #   neuer Sollw. = alter Sollwert + gain * Fehler   (begrenzt 0..800, Totband)
 #   -> Netz wird Richtung  -Ziel  geregelt (Ziel 0 = Nulleinspeisung).
 #
-# WICHTIG – Koordination: Deine 4020X regelt bereits auf denselben Netzwert.
-# Zwei unabhängige Regler auf ein Signal schaukeln. Daher:
-#   - standardmäßig AUS (input_boolean.ecovis_regelung),
-#   - gain klein (0.5) für ruhiges Verhalten,
-#   - zum Testen am besten die 4020X-Regelung kurz pausieren ODER dem ECOVIS
-#     eine eigene Rolle geben (z. B. feste Ziel-Einspeisung statt Nulleinspeisung).
 
 input_boolean:
   ecovis_regelung:
